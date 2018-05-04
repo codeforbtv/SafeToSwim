@@ -9,7 +9,7 @@ from keras import models
 
 # initialize our Flask application and the Keras model
 from safetoswim.core import PhotoProcessor
-from safetoswim.repository import PostgresRepository
+from safetoswim.repository import PostgresRepository, SqliteRepository
 
 application = flask.Flask(__name__)
 model = None
@@ -41,13 +41,10 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def save_image(image_location, latitude=None, longitude=None, date=None, time=None):
-    repo = PostgresRepository()
-    result = repo.create_tables()
-    assert result is True
-    submitter = 'tim@safetoswim.org'
-    dt = datetime.datetime.now()
-    id = repo.add_sample(submitter, 'image location', dt.date(), dt.time(), 'name', 'OakLedge')
+def save_image(submitter, image_location, date, time, name='', location='', latitude=0.0, longitude=0.0):
+    repo = SqliteRepository('test.sqlite')
+    id = repo.add_sample(submitter, image_location, date, time, name, location, latitude, longitude)
+    return id
 
 @application.route("/", methods=['GET'])
 def index():
@@ -67,8 +64,8 @@ def predict():
             # read the image in PIL format
             image = flask.request.files["image"].read()
             photo_processor = PhotoProcessor(image)
-            location = ''
-            latitude = 0.0
+            location = 'OakLedge'
+            submitter = 'admin@safetoswim.org'
             longitude = 0.0
             # photo_processor.exif['DateTime']
             # photo_processor.exif['DateTimeOriginal']
@@ -79,8 +76,11 @@ def predict():
             # photo_processor.exif['']
             # photo_processor.exif['']
             date = datetime.datetime.strptime(photo_processor.exif['DateTime'], '%Y:%m:%d %H:%M:%S')
-            time = datetime.datetime.now().date()
-            #save_image(location, latitude, longitude, date, time)
+            time = date.time()
+            date = date.date()
+            #date, time, name='', location='', latitude=0.0, longitude=0.0
+            save_image(submitter, 'images/one.jpg', str(date), str(time), 'New Sample', location,
+                       photo_processor.latitude, photo_processor.longitude)
 
             # preprocess the image and prepare it for classification
             rgb_data = photo_processor.prepare_rgb_data(img_size=(128, 128))
