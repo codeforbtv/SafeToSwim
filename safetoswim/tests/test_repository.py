@@ -1,3 +1,4 @@
+import datetime
 from safetoswim.repository import PostgresRepository
 
 
@@ -17,7 +18,8 @@ class TestsRepository(object):
         result = repo.create_tables()
         assert result is True
         submitter = 'tim@safetoswim.org'
-        id = repo.add_sample(submitter, 'image location', 'name', 'OakLedge')
+        dt = datetime.datetime.now()
+        id = repo.add_sample(submitter, 'image location', dt.date(), dt.time(), 'name', 'OakLedge')
         assert result is True
         assert id == 1
         result = repo.get_sample(id)

@@ -10,7 +10,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 class PhotoProcessor(object):
     def __init__(self, image):
         self._image = Image.open(io.BytesIO(image))
-        self.exif = self.get_exif_data(self._image)
+        self.exif, self.gps = self.get_exif_data(self._image)
 
     def get_exif_data(self, image):
         """Returns a dictionary from the exif data of an PIL Image item. Also converts the GPS Tags"""
@@ -28,7 +28,7 @@ class PhotoProcessor(object):
                     exif_data[decoded] = gps_data
                 else:
                     exif_data[decoded] = value
-        return exif_data
+        return exif_data, gps_data
 
     def prepare_rgb_data(self, img_size):
         rgb_data = None

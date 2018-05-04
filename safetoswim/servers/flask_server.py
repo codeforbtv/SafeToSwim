@@ -1,15 +1,19 @@
 import flask
 import os
+import datetime
 import sys
 
+import tensorflow as tf
 from flask import json
 from keras import models
 
 # initialize our Flask application and the Keras model
 from safetoswim.core import PhotoProcessor
+from safetoswim.repository import PostgresRepository
 
 application = flask.Flask(__name__)
 model = None
+graph = tf.get_default_graph()
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 UPLOAD_FOLDER = 'images'
 application.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -26,20 +30,24 @@ def load_model():
         raise TypeError(f'Failed to load model from file {model_path}')
 
 def get_model():
-    global model
+    global modele
     if model is None:
-        model_path = os.path.join('models', 'hab_MathBinaryClassifier.h5')
-        print(f'Loading model from: {model_path}')
-        model = models.load_model(model_path)
-        if model is None:
-            raise TypeError(f'Failed to load model from file {model_path}')
-
+        load_model()
     return model
 
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def save_image(image_location, latitude=None, longitude=None, date=None, time=None):
+    repo = PostgresRepository()
+    result = repo.create_tables()
+    assert result is True
+    submitter = 'tim@safetoswim.org'
+    dt = datetime.datetime.now()
+    id = repo.add_sample(submitter, 'image location', dt.date(), dt.time(), 'name', 'OakLedge')
 
 @application.route("/", methods=['GET'])
 def index():
@@ -59,21 +67,38 @@ def predict():
             # read the image in PIL format
             image = flask.request.files["image"].read()
             photo_processor = PhotoProcessor(image)
+            location = ''
+            latitude = 0.0
+            longitude = 0.0
+            # photo_processor.exif['DateTime']
+            # photo_processor.exif['DateTimeOriginal']
+            # photo_processor.exif['']
+            # photo_processor.exif['']
+            # photo_processor.exif['']
+            # photo_processor.exif['']
+            # photo_processor.exif['']
+            # photo_processor.exif['']
+            date = datetime.datetime.strptime(photo_processor.exif['DateTime'], '%Y:%m:%d %H:%M:%S')
+            time = datetime.datetime.now().date()
+            #save_image(location, latitude, longitude, date, time)
 
             # preprocess the image and prepare it for classification
             rgb_data = photo_processor.prepare_rgb_data(img_size=(128, 128))
 
             # classify the input image and then initialize the list
             # of predictions to return to the client
-            preds = model.predict(rgb_data)
-            #pred_class = model.p
-            #results = imagenet_utils.decode_predictions(preds)
+            # classify the input image and then initialize the list
+            # of predictions to return to the client
+            preds = None
+            model = get_model()
+            with graph.as_default():
+                preds = model.predict(rgb_data)
             if preds[0][0] >= 0.5:
                 data["prediction"] = 'bloom'
             else:
                 data["prediction"] = 'not-bloom'
 
-            data['exif'] = photo_processor.exif
+            #data['exif'] = photo_processor.exif
 
             # loop over the results and add them to the list of
             # returned predictions

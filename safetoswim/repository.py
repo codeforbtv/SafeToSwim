@@ -11,7 +11,9 @@ class Repository(metaclass=ABCMeta):
         location text,
         latitude float,
         longitude float,
-        imageLocation text
+        imageLocation text,
+        date date,
+        time time
     )
     '''
 
@@ -21,7 +23,7 @@ class Repository(metaclass=ABCMeta):
     def create_tables(self):
         raise NotImplementedError()
 
-    def add_sample(self, submitter, image_location, name=None, location=None, latitude=None, longitude=None):
+    def add_sample(self, submitter, image_location, date, time, name=None, location=None, latitude=None, longitude=None):
         raise NotImplementedError
 
     def get_sample(self, id):
@@ -57,9 +59,10 @@ class PostgresRepository(Repository):
         return ret_val
 
 
-    def add_sample(self, submitter, image_location, name=None, location=None, latitude=None, longitude=None):
-        command = f'INSERT INTO samples(submitter, name, location, latitude, longitude, imageLocation)' \
-                  f' VALUES (\'{submitter}\', \'{name}\', \'{location}\', 0.0, 0.0, \'{image_location}\') RETURNING Id'
+    def add_sample(self, submitter, image_location, date, time, name=None, location=None, latitude=None, longitude=None):
+        command = f'INSERT INTO samples(submitter, name, location, latitude, longitude, imageLocation, date, time)' \
+                  f' VALUES (\'{submitter}\', \'{name}\', \'{location}\', 0.0, 0.0, \'{image_location}\', ' \
+                  f'\'{date}\', \'{time}\') RETURNING Id'
         ret_val = self.execute_command(command, select=True)
         return ret_val[0][0]
 
