@@ -1,8 +1,0 @@
-flask
-keras
-tensorflow
-numpy
-Pillow
-theano
-sklearn
-h5py

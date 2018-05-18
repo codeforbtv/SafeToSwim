@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import json
 
 from keras import models
 
@@ -43,7 +44,42 @@ class TestPredict(object):
         assert response.status == '200 OK'
 
 
+    def test_predict_bloom(self):
+        file_dir = os.path.dirname(os.path.abspath(__file__))
+
+        img_file = os.path.join(file_dir, 'images', 'bloom.jpg')
+
+        client = flask_server.application.test_client()
+        client.testing = True
+        data = None
+        with open(img_file, 'br') as f:
+            data = f.read()
+        response = client.post ('/predict', content_type='multipart/form-data',
+                                data=dict(image=(BytesIO(data), 'image.jpg')))
+        assert response.status == '200 OK'
+        d = json.loads(response.get_data())
+        assert d['prediction'] == 'bloom'
+
+
+    def test_predict_not_bloom(self):
+        file_dir = os.path.dirname(os.path.abspath(__file__))
+
+        img_file = os.path.join(file_dir, 'images', 'not-bloom.jpg')
+
+        client = flask_server.application.test_client()
+        client.testing = True
+        data = None
+        with open(img_file, 'br') as f:
+            data = f.read()
+        response = client.post ('/predict', content_type='multipart/form-data',
+                                data=dict(image=(BytesIO(data), 'image.jpg')))
+        assert response.status == '200 OK'
+        d = json.loads(response.get_data())
+        assert d['prediction'] == 'not-bloom'
+
+
 if __name__ == '__main__':
     tests = TestPredict()
     #tests.test_predict_smoketest()
-    tests.test_predict_flask()
+    tests.test_predict_bloom()
+

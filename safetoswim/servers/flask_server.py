@@ -23,7 +23,7 @@ def load_model():
     global model
     file_dir = os.path.abspath(os.path.dirname(__file__))
     #model = ResNet50(weights="imagenet")
-    model_path = os.path.join(file_dir, 'models', 'hab_MathBinaryClassifier.h5')
+    model_path = os.path.join(file_dir, 'models', 'hab_KerasBinaryClassifier_model.h5')
     print(f'Loading model from: {model_path}')
     model = models.load_model(model_path)
     if model is None:
@@ -75,7 +75,10 @@ def predict():
             # photo_processor.exif['']
             # photo_processor.exif['']
             # photo_processor.exif['']
-            date = datetime.datetime.strptime(photo_processor.exif['DateTime'], '%Y:%m:%d %H:%M:%S')
+            if 'DateTime' in photo_processor.exif_data:
+                date = datetime.datetime.strptime(photo_processor.exif_data['DateTime'], '%Y:%m:%d %H:%M:%S')
+            else:
+                date = datetime.datetime.now()
             time = date.time()
             date = date.date()
             #date, time, name='', location='', latitude=0.0, longitude=0.0
@@ -112,7 +115,7 @@ def predict():
             data["success"] = True
 
             # return the data dictionary as a JSON response
-            response = flask.jsonify(str(data))
+            response = flask.jsonify(data)
             return response
         else:
             pass
